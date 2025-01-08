@@ -36,7 +36,10 @@ autoinstall:
     - echo 'GRUB_DISABLE_OS_PROBER=true' >> /target/etc/default/grub.d/99-custom.cfg
     - curtin in-target -- update-grub
     - curtin in-target -- useradd --system -s /bin/bash -d /home/ubuntu -Gsudo -m ubuntu
-    - curtin in-target -- echo 'ubuntu:$6$4dhq2ja3.TmWwNRN$J9y1Yx28huy1bHvNH.DZ89MerFcVYuDCvgd5TyPgl4R7XdRdxDcpfoTYMEPWan1NE64FXY6TWJjTybJwsY7pP0' | chpasswd -e
+    - |
+      curtin in-target -- bash -c '
+        echo "ubuntu:$6$4dhq2ja3.TmWwNRN$J9y1Yx28huy1bHvNH.DZ89MerFcVYuDCvgd5TyPgl4R7XdRdxDcpfoTYMEPWan1NE64FXY6TWJjTybJwsY7pP0" | chpasswd -e
+      '
   user-data:
     disable_root: true
     timezone: America/Sao_Paulo
