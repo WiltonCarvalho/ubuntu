@@ -1,0 +1,75 @@
+autoinstall:
+  version: 1
+  interactive-sections:
+    - network
+    - keyboard
+  keyboard:
+    layout: us
+    variant: alt-intl
+  locale: en_US.UTF-8
+  storage:
+    layout:
+      name: lvm
+      password: ubuntu
+      sizing-policy: all
+  apt:
+    preserve_sources_list: false
+    primary:
+      - arches: [default]
+        uri: "http://br.archive.ubuntu.com/ubuntu"
+    geoip: false
+  packages:
+    - vim
+    - git
+    - tmux
+  ssh:
+    allow-pw: true
+    install-server: true
+  late-commands:
+    - echo 'NAME_REGEX="^[a-z][-a-z0-9_.]*$"' >> /target/etc/adduser.conf
+    - echo '[pages]' > /target/usr/share/gnome-initial-setup/vendor.conf
+    - echo 'skip=language;timezone;privacy;goa' >> /target/usr/share/gnome-initial-setup/vendor.conf
+    #- echo "gsettings set org.gnome.desktop.input-sources sources \"[('xkb', 'us+alt-intl'), ('xkb', 'br')]\"" > /target/etc/skel/.xprofile
+    - echo 'GRUB_TIMEOUT_STYLE=menu' > /target/etc/default/grub.d/99-custom.cfg
+    - echo 'GRUB_TIMEOUT=5' >> /target/etc/default/grub.d/99-custom.cfg
+    - echo 'GRUB_CMDLINE_LINUX_DEFAULT=splash' >> /target/etc/default/grub.d/99-custom.cfg
+    - echo 'GRUB_DISABLE_OS_PROBER=true' >> /target/etc/default/grub.d/99-custom.cfg
+    - curtin in-target -- update-grub
+    - curtin in-target -- useradd --system -s /bin/bash -d /home/ubuntu -Gsudo -m ubuntu
+    - curtin in-target -- echo 'ubuntu:$6$4dhq2ja3.TmWwNRN$J9y1Yx28huy1bHvNH.DZ89MerFcVYuDCvgd5TyPgl4R7XdRdxDcpfoTYMEPWan1NE64FXY6TWJjTybJwsY7pP0' | chpasswd -e
+  user-data:
+    disable_root: true
+    timezone: America/Sao_Paulo
+    write_files:
+      - path: /etc/profile.d/custom.sh
+        permissions: "0755"
+        owner: "root"
+        content: |
+          HISTTIMEFORMAT="%Y-%m-%d %H:%M:%S | "
+          TMOUT=0
+          HISTCONTROL=ignoredups:ignorespace
+          HISTSIZE=200000
+          HISTFILESIZE=-1
+          HISTFILE=$HOME/.bash_history
+          export HISTTIMEFORMAT TMOUT HISTCONTROL HISTSIZE HISTFILESIZE HISTFILE
+          readonly HISTTIMEFORMAT TMOUT HISTCONTROL HISTSIZE HISTFILESIZE HISTFILE
+          alias rm='rm -I --preserve-root'
+          alias mv='mv -i'
+          alias cp='cp -i'
+          alias ln='ln -i'
+          alias chown='chown --preserve-root'
+          alias chmod='chmod --preserve-root'
+          alias chgrp='chgrp --preserve-root'
+          alias grep='grep --color=auto'
+      - path: /opt/ps1.txt
+        permissions: "0644"
+        owner: "root"
+        content: |
+          if [ $(id -u) -eq 0 ]; then
+            PS1='\[\e]0;\u@\h\a\]\[\033[0;31m\]\u@\h\[\033[0;35m\]$(__git_ps1)\[\033[0;36m\] ${PWD}\n\[\033[0;31m\]└─\[\033[0;31m\] \$\[\033[0;31m\] ▶\[\033[0m\] '
+          else
+            PS1='\[\e]0;\u@\h\a\]\[\033[0;32m\]\u@\h\[\033[0;35m\]$(__git_ps1)\[\033[0;36m\] ${PWD}\n\[\033[0;32m\]└─\[\033[0;32m\] \$\[\033[0;32m\] ▶\[\033[0m\] '
+          fi
+    runcmd:
+      - sed -i '/HIST/d' /home/*/.bashrc /etc/skel/.bashrc /root/.bashrc
+      - for i in $(echo /home/*/.bashrc /etc/skel/.bashrc /root/.bashrc); do cat /opt/ps1.txt >> $i; done
